@@ -1,0 +1,63 @@
+---
+
+- name: Configure server
+  hosts: webserver
+  become: true
+
+  tasks:
+    - name: Patch the os
+      yum:
+        name: '*'
+        state: latest
+
+    - name: Install nodejs and npm
+      yum:
+        name: 
+          - nodejs
+          - npm
+
+- name: Create new user in host machine
+  hosts: webserver
+  become: true
+  vars_files:
+    - project-vars
+
+  tasks:
+    - name: Create user {{username}}
+      user:
+        name: "{{username}}"
+        comment: "{{username}} admin"
+        group: wheel
+
+- name: Deploy nodejs application
+  hosts: webserver
+  become: true
+  become_user: "{{username}}"
+  vars_files:
+    - project-vars
+
+  tasks:
+    - name: Copy and unpack nodejs folder to the remote host
+      unarchive:
+        src: /home/vagrant/express-demo-0.0.0.tgz
+        dest: /home/{{username}}/
+
+    - name: Install nodejs app dependencies
+      npm:
+        path: /home/{{username}}/package/
+
+    - name: Start nodejs application
+      command:
+        cmd: npm start
+        chdir: /home/{{username}}/package/
+      async: 1000
+      poll: 0
+
+    - name: Ensure app is running
+      shell:
+        cmd: ps aux | grep node
+      register: app_status
+    
+    - name: Show the result
+      debug:
+        var: app_status.stdout_lines

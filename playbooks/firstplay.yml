@@ -1,0 +1,41 @@
+---
+- hosts: webserver
+  remote_user: vagrant
+
+  tasks:
+    - name: Create user
+      user: 
+          name: cedric
+          comment: cedric sensei
+          uid: 1040
+          group: wheel
+    
+    - name: Create a file on target host
+      file:
+        path: /temp/cedric.txt
+        state: touch
+        mode: 0644
+        owner: cedric
+        group: root
+
+    - name: Create folder
+      file:
+        path: /tmp/ansible_dir
+        state: directory
+        mode: 0755
+
+    - name: Install Apache
+      yum:
+        name: "{{ packages }}"
+      vars:
+        packages:
+        - httpd
+        - httpd-tools
+        - wget
+        - finger
+      
+    - name: Start and Enable Apache server
+      service:
+        name: httpd
+        state: started
+        enabled: yes

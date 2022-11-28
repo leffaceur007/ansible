@@ -1,0 +1,11 @@
+---
+
+- name: Patch Linux Machines
+  hosts: all
+  remote_user: vagrant
+  tasks:
+  - name: upgrade all packages
+    yum:
+      name: '*'
+      state: latest
+    become: true
