@@ -1,0 +1,71 @@
+---
+  - name: Deploy docker on aws ec2 instance
+    hosts: aws_docker
+    become: true
+
+    tasks:
+      - name: Remove previous docker installation
+        apt:
+          pkg:
+          - docker
+          - docker-engine
+          - docker.io
+          - containerd
+          - runc
+          state: absent
+
+      - name: Install docker
+        apt:
+          pkg:
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+          state: latest
+
+  - name: Download and install docker
+    hosts: aws_docker
+    become: true
+
+    tasks:
+      - name: Create Docker GPG key
+        file:
+          path: /etc/apt/keyrings
+          state: directory
+
+      - name: Add the Docker repository GPG key
+        apt_key:
+          url: https://download.docker.com/linux/ubuntu/gpg
+          state: present
+        when: ansible_distribution == 'Ubuntu'
+
+      - name: Add the Docker repository
+        apt_repository:
+          repo: 'deb https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable'
+          state: present
+
+      - name: Refresh apt cache
+        apt:
+          update-cache: yes
+
+      - name: Update the apt package index
+        apt:
+          name: "*"
+          state: latest
+
+      - name: Install the latest version of Docker
+        apt:
+          pkg:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
+
+      - name: Test if docker properly installed
+        shell:
+          cmd: docker run hello-world
+        register: docker_output
+
+      - name: Print docker run output
+        debug: 
+          msg: "{{ docker_output.stdout }}"
